@@ -8,12 +8,12 @@ function ProjectCard({ title, description, image, tags, link }) {
       <p style={{ ...textStyle, fontSize: '14px', opacity: 0.8, lineHeight: '1.4' }}>
         {description}
       </p>
-      
-      <div style={imageContainer}>
+
+      <div style={{ ...imageContainer, marginTop: '10px' }}>
         <img src={image} alt={title} style={imageStyle} />
       </div>  
 
-      <div style={tagContainer}>
+      <div style={{ ...tagContainer, marginTop: '20px' }}>
         {tags.map((tag, index) => (
           <span key={index} style={tagStyle}>{tag}</span>
         ))}
@@ -21,7 +21,7 @@ function ProjectCard({ title, description, image, tags, link }) {
       
       <div style={{ marginTop: 'auto', textAlign: 'center', paddingBottom: '10px' }}>
         <a href={link} target="_blank" rel="noreferrer" style={linkStyle}>
-          View Project →
+          {title}
         </a>
       </div>
     </div>

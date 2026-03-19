@@ -1,13 +1,17 @@
 // src/components/Navbar.jsx
+import { Link } from 'react-router-dom';
 
 function Navbar() {
   return (
     <nav style={navStyle}>
       <h2 style={{ margin: 0 }}>Khalid Ashani</h2>
       <ul style={ulStyle}>
-        <li style={liStyle}><a href="#about" style={linkStyle}>About</a></li>
-        <li style={liStyle}><a href="#projects" style={linkStyle}>Projects</a></li>
-        <li style={liStyle}><a href="#contact" style={linkStyle}>Contact</a></li>
+        <li style={liStyle}><Link hide to="/" style={linkStyle}>About</Link></li>
+        <li style={liStyle}><Link hide to="#projects" style={linkStyle}>Projects</Link></li>
+        {/* Change this from <a> to <Link> */}
+        <li style={liStyle}>
+          <Link to="/contact" style={linkStyle}>Contact</Link>
+        </li>
       </ul>
     </nav>
   );
