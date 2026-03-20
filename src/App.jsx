@@ -10,15 +10,15 @@ import codingImg from './assets/images/coding.png';
 function App() {
   const myProjects = [
     { 
-      title: "Data Analytics Project", 
+      title: "Data Analytics Project 🚧", 
       description: "Built with React and Stripe.",
       image: codingImg,
       tags: ["Python", "R", "SQL", "Git"], 
       link: "https://github.com/khalidashani/Python" 
     },
     { 
-      title: "Running Progress", 
-      description: "Real-time weather data.",
+      title: "Running Progress 🚧", 
+      description: "Real-time running progress data.",
       image: runningImg, 
       tags: ["API", "Dashboard", "Strava"], 
       link: "#" 
