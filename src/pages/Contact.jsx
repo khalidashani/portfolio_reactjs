@@ -1,103 +1,102 @@
 import React from 'react';
+import SocialCard from '../components/SocialCard'; // Adjust path if needed
 
-// src/pages/Contact.jsx
+// Corrected relative paths for Vite
+import LinkedinImg from '../assets/images/linkedin.png'; 
+import YoutubeImg from '../assets/images/youtube.png';
+import InstagramImg from '../assets/images/instagram.png';
+import TiktokImg from '../assets/images/tiktok.png'; // Fixed duplicate import from your file
+import ThreadsImg from '../assets/images/threads.png';
+import GithubImg from '../assets/images/github.png';
 
 const Contact = () => {
-    const links = [
-        { name: 'LinkedIn', url: 'https://www.linkedin.com/in/khalid-ashani-2a6a70213/' },
-        { name: 'YouTube', url: 'https://www.youtube.com/@khalidashani' },
-        { name: 'Instagram', url: 'https://www.instagram.com/khalidashani' },
-        { name: 'TikTok', url: 'https://www.tiktok.com/@khalidashani' },
-        { name: 'Threads', url: 'https://www.threads.net/@khalidashani' },
+    const mySocial = [
+        { name: "LinkedIn", url: "https://www.linkedin.com/in/khalid-ashani-2a6a70213/", icon: LinkedinImg },
+        { name: "Youtube", url: "https://www.youtube.com/@khalidashani", icon: YoutubeImg },
+        { name: "Instagram", url: "https://www.instagram.com/khalidashani", icon: InstagramImg },
+        { name: "Tiktok", url: "https://www.tiktok.com/@khalidashani", icon: TiktokImg },
+        { name: "Threads", url: "https://www.threads.net/@khalidashani", icon: ThreadsImg },
+        { name: "Github", url: "https://github.com/khalidashani", icon: GithubImg },
     ];
 
     const email = 'khalidnoorashani@gmail.com';
-    const phone = '+601128451435';
+    const phone = 'Please reach out via email or social media for phone contact.';
 
     const containerStyle = {
-        color: '#fbfbfbff',
+        color: '#ffffff',
         textAlign: 'center',
-        color: '#ffffffff',
         padding: '40px 20px',
-        maxWidth: '600px',
-        margin: '0 auto',
+        maxWidth: '1200px', // Wider to fit cards side-by-side
+        margin: '50px auto 0 auto',
+        fontFamily: 'sans-serif'
+    };
+
+    const cardContainer = {
+        display: 'flex',
+        flexWrap: 'wrap',
         justifyContent: 'center',
-        alignItems: 'center',
-        marginTop: '50px',
+        gap: '20px',
+        marginTop: '30px',
     };
 
-    const listStyle = {
-        listStyle: 'none',
-        padding: 0,
-        display: 'flex', // Changed from 'grid' to 'flex'
-        flexDirection: 'row', // Ensures items go side-by-side
-        flexWrap: 'wrap', // Allows them to wrap to a new line if the screen is too small
-        gap: '15px', // Space between the buttons
-        marginTop: 12,
-        justifyContent: 'center', // Aligns items to the left (use 'center' if you prefer)
+    const directContainerStyle = {
+        display: 'flex',
+        flexDirection: 'column', // Stacks the buttons vertically
+        alignItems: 'center',    // Centers the buttons horizontally in the middle
+        gap: '15px',             // Adds consistent space between the buttons
+        marginTop: '20px',
+        width: '100%',
     };
 
-    const linkStyle = {
-        display: 'inline-block',
-        padding: '8px 12px',
-        borderRadius: 6,
-        background: '#f3f4f6',
-        color: '#111',
-        textDecoration: 'none',
-        maxWidth: '300px',
-        margin: '0 auto',
-        transition: 'background 0.3s, color 0.3s',
+    const directLinkStyle = {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        flexWrap: 'wrap',
+        padding: '12px 24px',
+        borderRadius: '8px',
+        backgroundColor: "#3a3939",
+        
+        // --- Border Fixes ---
+        border: "1px solid #ffffff", // This is the shorthand way to do it
+        // Alternatively, you can use:
+        // borderStyle: 'solid',
+        // borderWidth: '1px',
+        // borderColor: '#ffffff',
+        
+        color: '#ffffff',
+        textDecoration: 'none',
+        fontWeight: '500',
+        width: '100%',
+        maxWidth: '320px',
+        transition: 'all 0.3s ease', // 'all' will animate the border too if you change it on hover
     };
 
-    const socialStyle = {
-        display: 'flex',          // Use flex to center text inside the button
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '10px 20px',     // Slightly more padding for a better look
-        borderRadius: '8px',
-        background: '#f3f4f6',
-        color: '#111',
-        textDecoration: 'none',
-        minWidth: '120px',        // Ensures buttons have a consistent size
-        transition: 'background 0.3s, transform 0.2s',
-        fontWeight: '500',
-};
-
     return (
-        <main style={{ ...containerStyle }}>
-            <h1 >Contact</h1>
-            <p>Feel free to reach out via email, phone, or one of the social links below.</p>
+        <main style={containerStyle}>
+            <h1 style={{ textTransform: 'uppercase' }}>Contact</h1>
+            <p style={{ opacity: 0.8 }}>Feel free to reach out via email, phone, or one of the social links below.</p>
 
-            <section aria-labelledby="social-heading" style={{ marginTop: 60 }}>
-                <h2 id="social-heading">Social</h2>
-                <ul style={listStyle}>
-                    {links.map((l) => (
-                        <li key={l.name}>
-                            <a
-                                href={l.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={socialStyle}
-                                aria-label={l.name}
-                            >
-                                {l.name}
-                            </a>
-                        </li>
+            <section style={{ marginTop: 40 }}>
+                <h2 style={{ letterSpacing: '1px' }}>Social Media Links</h2>
+                <div style={cardContainer}>
+                    {mySocial.map((social) => (
+                        <SocialCard 
+                            key={social.name}
+                            image={social.icon}
+                            title={social.name}
+                            link={social.url}
+                        />
                     ))}
-                </ul>
+                </div>
             </section>
 
-            <section aria-labelledby="contact-heading" style={{ marginTop: 60 }}>
-                <h2 id="contact-heading">Direct contact</h2>
-                <div style={{ display: 'grid', gap: 8, marginTop: 8 }}>
-                    <a href={`mailto:${email}`} style={linkStyle} aria-label="Email">
+            <section style={{ marginTop: 40 }}>
+                <h2 style={{ textAlign: 'center' }}>Direct Contact</h2>
+                <div style={directContainerStyle}>
+                    <a href={`mailto:${email}`} style={directLinkStyle}>
                         {email}
                     </a>
-                    <a href={`tel:${phone}`} style={linkStyle} aria-label="Phone">
+                    <a href={`tel:${phone}`} style={directLinkStyle}>
                         {phone}
                     </a>
                 </div>
