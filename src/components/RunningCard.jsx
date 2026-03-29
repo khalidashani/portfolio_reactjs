@@ -342,7 +342,8 @@ export default function RunningCard({ data, cardId = "0" }) {
         <div className="rc-stats-panel">
           <div className="rc-header">
             <span className="rc-run-label">
-              <span className="rc-orange-dot" /><span className="rc-run-date">{data ? formatDate(data.date) : "—"}</span>
+              <span className="rc-orange-dot" />
+              <span className="rc-run-date">{data ? formatDate(data.date) : "—"}</span>
             </span>
           </div>
 
