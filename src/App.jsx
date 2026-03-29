@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom'; // MISSING IMPORT
 import Navbar from './components/Navbar';
 import ProjectCard from './components/ProjectCard';
 import Contact from './pages/Contact';
+import Running from './pages/Running';
 
 import runningImg from './assets/images/running.png';
 import contactImg from './assets/images/contact.png';
@@ -21,7 +22,7 @@ function App() {
       description: "Real-time running progress data.",
       image: runningImg, 
       tags: ["API", "Dashboard", "Strava"], 
-      link: "#" 
+      link: "/running" 
     },
     { 
       title: "Contact", 
@@ -56,6 +57,9 @@ function App() {
             </div>
           </div>
         } />
+
+        {/* RUNNING PAGE: Shows only the Running component */}  
+        <Route path="/running" element={<Running />} />
 
         {/* CONTACT PAGE: Shows only the Contact component */}
         <Route path="/contact" element={<Contact />} />
