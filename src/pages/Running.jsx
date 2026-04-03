@@ -13,19 +13,25 @@ const STATIC_SESSIONS = [
   },
 ];
 
+const YEARLY_GOAL = 1000;
+
 function parseCSV(text) {
   const rows = text.trim().split("\n");
+  
   return rows.slice(1).map((row) => {
-    const firstComma  = row.indexOf(",");
-    const secondComma = row.indexOf(",", firstComma + 1);
-    const thirdComma  = row.indexOf(",", secondComma + 1);
+    // Split logic (handling commas or tabs/spaces)
+    const parts = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)|(?:\t+| {2,})/);
+
+    if (parts.length < 3) return null;
+
     return {
-      date:     row.slice(0, firstComma).trim(),
-      distance: row.slice(firstComma + 1, secondComma).trim(),
-      time:     row.slice(secondComma + 1, thirdComma).trim(),
-      route:    row.slice(thirdComma + 1).trim(),
+      date:     parts[0].trim(),
+      distance: parts[1].trim(),
+      time:     parts[2].trim(),
+      // Fallback: If parts[3] is missing or empty, set to "no_route"
+      route:    (parts[3] && parts[3].trim() !== "") ? parts[3].trim() : "no_route",
     };
-  }).filter((s) => s.date && s.distance && s.route);
+  }).filter((s) => s && s.date && s.distance);
 }
 
 export default function Running() {
@@ -43,6 +49,9 @@ export default function Running() {
       .finally(() => setLoading(false));
   }, []);
 
+  const totalKm = sessions.reduce((acc, curr) => acc + parseFloat(curr.distance || 0), 0);
+  const progressPercent = Math.min((totalKm / YEARLY_GOAL) * 100, 100);
+
   return (
     <div style={{ padding: "40px 20px", display: "flex", flexDirection: "column", alignItems: "center", gap: "32px" }}>
       <style>{`
@@ -52,6 +61,39 @@ export default function Running() {
           gap: 24px;
           width: 100%;
         }
+
+        .progress-card {
+          width: 100%;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 16px;
+          padding: 24px;
+          box-sizing: border-box;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .progress-bar-bg {
+          width: 100%;
+          height: 8px;
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 4px;
+          overflow: hidden;
+        }
+
+        .progress-bar-fill {
+          height: 100%;
+          background: #fff; /* Or use your brand accent color */
+          transition: width 1s ease-in-out;
+        }
+
+        .stats-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: baseline;
+        }
+
         .runs-grid .running-card {
           width: 100% !important;
         }
@@ -61,6 +103,28 @@ export default function Running() {
       <p style={{ color: "rgba(255,255,255,0.4)", margin: 0, fontSize: "14px", fontFamily: "monospace" }}>
         {loading ? "Loading sessions..." : `${sessions.length} run${sessions.length !== 1 ? "s" : ""} logged`}
       </p>
+
+      <div className="progress-card">
+        <div className="stats-row">
+          <span style={{ fontSize: "14px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "1px" }}>
+            2026 Goal Progress
+          </span>
+          <span style={{ fontSize: "12px", opacity: 0.6 }}>
+            {totalKm.toFixed(2)} / {YEARLY_GOAL} KM
+          </span>
+        </div>
+        
+        <div className="progress-bar-bg">
+          <div 
+            className="progress-bar-fill" 
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+
+        <div style={{ fontSize: "24px", fontWeight: "600" }}>
+          {progressPercent.toFixed(1)}% <span style={{ fontSize: "14px", opacity: 0.4, fontWeight: "400" }}>complete</span>
+        </div>
+      </div>
 
       <div className="runs-grid">
         {sessions.map((session, index) => (

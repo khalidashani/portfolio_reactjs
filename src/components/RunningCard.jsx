@@ -26,18 +26,55 @@ function decodePolyline(encoded) {
 
 // ── Normalize coords to SVG space ─────────────────────────────────────────────
 function normalizePath(points, width, height, padding = 16) {
+  if (!points || points.length === 0) return [];
+
+  // 1. Find the middle latitude for the projection correction
   const lats = points.map((p) => p[0]);
-  const lngs = points.map((p) => p[1]);
-  const minLat = Math.min(...lats), maxLat = Math.max(...lats);
-  const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
-  const scaleX = (width - padding * 2) / (maxLng - minLng || 1);
-  const scaleY = (height - padding * 2) / (maxLat - minLat || 1);
-  const scale = Math.min(scaleX, scaleY);
-  const offsetX = (width - (maxLng - minLng) * scale) / 2;
-  const offsetY = (height - (maxLat - minLat) * scale) / 2;
-  return points.map(([lat, lng]) => [
-    offsetX + (lng - minLng) * scale,
-    offsetY + (maxLat - lat) * scale,
+  const minLat = Math.min(...lats);
+  const maxLat = Math.max(...lats);
+  const midLat = (minLat + maxLat) / 2;
+
+  // 2. Earth Curve Correction (Basic Spherical Projection)
+  // 1 degree of longitude is shorter than 1 degree of latitude by cos(latitude)
+  const cosLat = Math.cos((midLat * Math.PI) / 180);
+
+  // Map to Cartesian points using the curve correction
+  const cartesianPoints = points.map(([lat, lng]) => ({
+    x: lng * cosLat,
+    y: lat,
+  }));
+
+  const xs = cartesianPoints.map((p) => p.x);
+  const ys = cartesianPoints.map((p) => p.y);
+
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+
+  const routeWidth = maxX - minX;
+  const routeHeight = maxY - minY;
+
+  // 3. Calculate drawing area
+  const drawW = width - padding * 2;
+  const drawH = height - padding * 2;
+
+  // 4. Calculate locked aspect-ratio scale
+  const scale = Math.min(
+    drawW / (routeWidth || 1),
+    drawH / (routeHeight || 1)
+  );
+
+  const scaledW = routeWidth * scale;
+  const scaledH = routeHeight * scale;
+
+  // 5. Perfect centering
+  const offsetX = (width - scaledW) / 2;
+  const offsetY = (height - scaledH) / 2;
+
+  return cartesianPoints.map((p) => [
+    offsetX + (p.x - minX) * scale,
+    offsetY + (maxY - p.y) * scale, // Y is inverted for SVG (0 is at top)
   ]);
 }
 
@@ -79,14 +116,20 @@ export default function RunningCard({ data, cardId = "0" }) {
   const gradId = `routeGrad-${cardId}`;
   const glowId = `glow-${cardId}`;
 
+ // Check if route is valid
+  const hasRoute = data?.route && data.route !== "no_route" && data.route !== "";
+
   useEffect(() => {
-    if (!data?.route) return;
+    if (!hasRoute) {
+      setSvgPoints([]);
+      return;
+    }
     setAnimated(false);
     const decoded = decodePolyline(data.route);
     setSvgPoints(normalizePath(decoded, SVG_W, SVG_H, 16));
     const t = setTimeout(() => setAnimated(true), 100);
     return () => clearTimeout(t);
-  }, [data]);
+  }, [data, hasRoute]);
 
   const pathD = svgPoints.length > 0
     ? "M " + svgPoints.map((p) => p.join(" ")).join(" L ")
@@ -96,6 +139,7 @@ export default function RunningCard({ data, cardId = "0" }) {
 
   return (
     <>
+
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;600&display=swap');
 
@@ -114,6 +158,27 @@ export default function RunningCard({ data, cardId = "0" }) {
           font-family: 'Outfit', sans-serif;
         }
 
+        .rc-no-route {
+          width: 100%;
+          height: 200px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          opacity: 0.3;
+        }
+
+        .rc-placeholder-icon {
+          width: 40px;
+          height: 40px;
+          border: 1px dashed #FC4C02;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
         /* grain overlay */
         .running-card::before {
           content: '';
@@ -129,6 +194,7 @@ export default function RunningCard({ data, cardId = "0" }) {
         .rc-route-panel {
           position: relative;
           width: 100%;
+          box-sizing: border-box; /* <--- ADD THIS LINE */
           background: linear-gradient(160deg, #111 0%, #0a0a0a 100%);
           display: flex;
           flex-direction: column;
@@ -288,55 +354,95 @@ export default function RunningCard({ data, cardId = "0" }) {
       <div className="running-card">
 
         {/* ── Top: Route map ── */}
-        <div className="rc-route-panel">
-          <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} className="rc-route-svg">
-            <defs>
-              <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#FF6B35" />
-                <stop offset="50%" stopColor="#FC4C02" />
-                <stop offset="100%" stopColor="#E63900" />
-              </linearGradient>
-              <filter id={glowId}>
-                <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
-                <feMerge>
-                  <feMergeNode in="coloredBlur" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
-            </defs>
+          <div className="rc-route-panel">
+            {pathD ? (
+              /* ── Render Map if pathD exists ── */
+              <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} className="rc-route-svg">
+                <defs>
+                  <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#FF6B35" />
+                    <stop offset="50%" stopColor="#FC4C02" />
+                    <stop offset="100%" stopColor="#E63900" />
+                  </linearGradient>
+                  <filter id={glowId}>
+                    <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
+                    <feMerge>
+                      <feMergeNode in="coloredBlur" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                </defs>
 
-            {/* glow ghost */}
-            {pathD && (
-              <path d={pathD} fill="none" stroke="#FC4C02" strokeWidth="5"
-                strokeLinecap="round" strokeLinejoin="round"
-                opacity="0.1" filter={`url(#${glowId})`} />
-            )}
-            {/* animated route */}
-            {pathD && (
-              <path d={pathD}
-                className={`rc-route-path ${animated ? "drawn" : ""}`}
-                stroke={`url(#${gradId})`}
-                filter={`url(#${glowId})`} />
-            )}
-            {/* start dot */}
-            {svgPoints.length > 0 && (
-              <circle cx={svgPoints[0][0]} cy={svgPoints[0][1]} r="4"
-                fill="#FC4C02" opacity={animated ? 1 : 0}
-                style={{ transition: "opacity 0.4s ease 2.2s" }} />
-            )}
-            {/* end dot */}
-            {svgPoints.length > 1 && (
-              <circle cx={svgPoints[svgPoints.length - 1][0]} cy={svgPoints[svgPoints.length - 1][1]} r="4"
-                fill="#fff" opacity={animated ? 0.85 : 0}
-                style={{ transition: "opacity 0.4s ease 2.4s" }} />
-            )}
-          </svg>
+                {/* glow ghost */}
+                <path d={pathD} fill="none" stroke="#FC4C02" strokeWidth="5"
+                  strokeLinecap="round" strokeLinejoin="round"
+                  opacity="0.1" filter={`url(#${glowId})`} />
+                
+                {/* animated route */}
+                <path d={pathD}
+                  className={`rc-route-path ${animated ? "drawn" : ""}`}
+                  stroke={`url(#${gradId})`}
+                  strokeWidth="2" 
+                  fill="none"
+                  strokeLinecap="round" 
+                  strokeLinejoin="round"
+                  filter={`url(#${glowId})`} />
 
-          <div className="rc-strava-row">
-            <StravaLogo size={14} />
-            <span className="rc-strava-text">via Strava</span>
+                {/* start dot */}
+                {svgPoints.length > 0 && (
+                  <circle cx={svgPoints[0][0]} cy={svgPoints[0][1]} r="4"
+                    fill="#FC4C02" opacity={animated ? 1 : 0}
+                    style={{ transition: "opacity 0.4s ease 2.2s" }} />
+                )}
+                {/* end dot */}
+                {svgPoints.length > 1 && (
+                  <circle cx={svgPoints[svgPoints.length - 1][0]} cy={svgPoints[svgPoints.length - 1][1]} r="4"
+                    fill="#fff" opacity={animated ? 0.85 : 0}
+                    style={{ transition: "opacity 0.4s ease 2.4s" }} />
+                )}
+              </svg>
+            ) : (
+              /* ── Render Placeholder if pathD is empty ── */
+              <div style={{ 
+                height: SVG_H, 
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                gap: '12px',
+                opacity: 0.4
+              }}>
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  border: '1px dashed #FC4C02',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FC4C02" strokeWidth="1.5">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+                    <circle cx="12" cy="10" r="3" />
+                    <line x1="1" y1="1" x2="23" y2="23" stroke="white" strokeWidth="2" />
+                  </svg>
+                </div>
+                <span style={{ 
+                  fontFamily: 'DM Mono, monospace', 
+                  fontSize: '10px', 
+                  letterSpacing: '0.1em', 
+                  color: 'rgba(255,255,255,0.5)' 
+                }}>
+                  NO GPS DATA
+                </span>
+              </div>
+            )}
+
+            <div className="rc-strava-row">
+              <StravaLogo size={14} />
+              <span className="rc-strava-text">via Strava</span>
+            </div>
           </div>
-        </div>
 
         {/* ── Bottom: Stats ── */}
         <div className="rc-stats-panel">
